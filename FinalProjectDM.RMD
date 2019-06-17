@@ -70,17 +70,34 @@ I decided to use the random forest method with the train function. While the res
   #Fit the model, and use the Cross Validation feature with 10 splits 
   modFit <- train(classe ~.,method="rf",data=training,trControl=trainControl(method="cv",number=10,verboseIter=FALSE))
   testpredictions <- predict(modFit,traintesting)
-  
-
 ```
-##Confusion Matrix to test accuracy
+##The Model
+
+Details on the model are given below:
+  
+```{r}
+print(modFit)
+```
+##Confusion Matrix to test accuracy and out-of-sample error
 
 I next created a Confusion Matrix to determine the accuracy of the model. The test data came the original file called test (30% of the original).
 
-The Confusion Matrix results indicated greater than 99% accuracy (99.1%), giving me confidence that I could use this for the quiz predictions. 
+The Confusion Matrix results indicated greater than 99% accuracy (99.3%), giving me confidence that I could use this for the quiz predictions. 
+
+
 ```{r Create a confusion matrix,echo=TRUE}
 #Create a confusionMatrix to assess the accuracy of the model
   print(confusionMatrix(testpredictions,traintesting$classe))
+
+```
+##Out-of-sample error
+
+The out-of-sample error is less than one percent:
+Out of sample error = 1 - Accuracy =  1-.993=0.7%
+
+```{r}
+print(postResample(testpredictions,traintesting$classe))
+
 
 ```
 ##Generating predictions for the quiz
@@ -185,7 +202,7 @@ Question 20:
 ```
 ##Conclusions
 
-This relatively simple approach based on all of the sensor data and only the random forest model showed that greater than 99% accuracy could be achieved. The results for the 20 cases in the test csv file were used in the project quiz and found to be 100% correct.
+This relatively simple approach based on all of the sensor data and only the random forest model showed that greater than 99% accuracy could be achieved, i.e. out-of-sample error of less than 1%. The results for the 20 cases in the test csv file were used in the project quiz and found to be 100% correct.
    
 
 

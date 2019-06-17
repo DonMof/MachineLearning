@@ -245,44 +245,74 @@ fulltraining &lt;- subset(training,select=c(roll_belt,pitch_belt,yaw_belt,total_
   modFit &lt;- train(classe ~.,method=&quot;rf&quot;,data=training,trControl=trainControl(method=&quot;cv&quot;,number=10,verboseIter=FALSE))
   testpredictions &lt;- predict(modFit,traintesting)</code></pre>
 </div>
-<div id="confusion-matrix-to-test-accuracy" class="section level2">
-<h2>Confusion Matrix to test accuracy</h2>
+<div id="the-model" class="section level2">
+<h2>The Model</h2>
+<p>Details on the model are given below:</p>
+<pre class="r"><code>print(modFit)</code></pre>
+<pre><code>## Random Forest 
+## 
+## 13453 samples
+##    51 predictor
+##     5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## No pre-processing
+## Resampling: Cross-Validated (10 fold) 
+## Summary of sample sizes: 12108, 12108, 12108, 12108, 12108, 12108, ... 
+## Resampling results across tuning parameters:
+## 
+##   mtry  Accuracy   Kappa    
+##    2    0.9925669  0.9905967
+##   26    0.9914525  0.9891868
+##   51    0.9855802  0.9817558
+## 
+## Accuracy was used to select the optimal model using the largest value.
+## The final value used for the model was mtry = 2.</code></pre>
+</div>
+<div id="confusion-matrix-to-test-accuracy-and-out-of-sample-error" class="section level2">
+<h2>Confusion Matrix to test accuracy and out-of-sample error</h2>
 <p>I next created a Confusion Matrix to determine the accuracy of the model. The test data came the original file called test (30% of the original).</p>
-<p>The Confusion Matrix results indicated greater than 99% accuracy (99.1%), giving me confidence that I could use this for the quiz predictions.</p>
+<p>The Confusion Matrix results indicated greater than 99% accuracy (99.3%), giving me confidence that I could use this for the quiz predictions.</p>
 <pre class="r"><code>#Create a confusionMatrix to assess the accuracy of the model
   print(confusionMatrix(testpredictions,traintesting$classe))</code></pre>
 <pre><code>## Confusion Matrix and Statistics
 ## 
 ##           Reference
 ## Prediction    A    B    C    D    E
-##          A 1640    3    0    0    0
-##          B    0 1111   12    0    0
-##          C    0    1  991   18    0
-##          D    0    0    2  926    1
-##          E    1    0    0    0 1057
+##          A 1641    8    0    0    0
+##          B    0 1101    7    0    0
+##          C    0    6  998   21    0
+##          D    0    0    0  923    2
+##          E    0    0    0    0 1056
 ## 
 ## Overall Statistics
-##                                          
-##                Accuracy : 0.9934         
-##                  95% CI : (0.991, 0.9953)
-##     No Information Rate : 0.2847         
-##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16      
-##                                          
-##                   Kappa : 0.9917         
-##                                          
-##  Mcnemar's Test P-Value : NA             
+##                                           
+##                Accuracy : 0.9924          
+##                  95% CI : (0.9898, 0.9944)
+##     No Information Rate : 0.2847          
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+##                                           
+##                   Kappa : 0.9903          
+##                                           
+##  Mcnemar's Test P-Value : NA              
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity            0.9994   0.9964   0.9861   0.9809   0.9991
-## Specificity            0.9993   0.9974   0.9960   0.9994   0.9998
-## Pos Pred Value         0.9982   0.9893   0.9812   0.9968   0.9991
-## Neg Pred Value         0.9998   0.9991   0.9971   0.9963   0.9998
+## Sensitivity            1.0000   0.9874   0.9930   0.9778   0.9981
+## Specificity            0.9981   0.9985   0.9943   0.9996   1.0000
+## Pos Pred Value         0.9951   0.9937   0.9737   0.9978   1.0000
+## Neg Pred Value         1.0000   0.9970   0.9985   0.9957   0.9996
 ## Prevalence             0.2847   0.1935   0.1744   0.1638   0.1836
-## Detection Rate         0.2846   0.1928   0.1720   0.1607   0.1834
-## Detection Prevalence   0.2851   0.1949   0.1753   0.1612   0.1836
-## Balanced Accuracy      0.9993   0.9969   0.9910   0.9902   0.9994</code></pre>
+## Detection Rate         0.2847   0.1910   0.1732   0.1602   0.1832
+## Detection Prevalence   0.2861   0.1923   0.1779   0.1605   0.1832
+## Balanced Accuracy      0.9990   0.9930   0.9937   0.9887   0.9991</code></pre>
+</div>
+<div id="out-of-sample-error" class="section level2">
+<h2>Out-of-sample error</h2>
+<p>The out-of-sample error is less than one percent: Out of sample error = 1 - Accuracy = 1-.993=0.7%</p>
+<pre class="r"><code>print(postResample(testpredictions,traintesting$classe))</code></pre>
+<pre><code>##  Accuracy     Kappa 
+## 0.9923651 0.9903402</code></pre>
 </div>
 <div id="generating-predictions-for-the-quiz" class="section level2">
 <h2>Generating predictions for the quiz</h2>
@@ -382,7 +412,7 @@ fulltraining &lt;- subset(training,select=c(roll_belt,pitch_belt,yaw_belt,total_
 </div>
 <div id="conclusions" class="section level2">
 <h2>Conclusions</h2>
-<p>This relatively simple approach based on all of the sensor data and only the random forest model showed that greater than 99% accuracy could be achieved. The results for the 20 cases in the test csv file were used in the project quiz and found to be 100% correct.</p>
+<p>This relatively simple approach based on all of the sensor data and only the random forest model showed that greater than 99% accuracy could be achieved, i.e. out-of-sample error of less than 1%. The results for the 20 cases in the test csv file were used in the project quiz and found to be 100% correct.</p>
 </div>
 
 
