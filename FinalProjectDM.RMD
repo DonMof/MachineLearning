@@ -1,0 +1,194 @@
+---
+title: "Course 8 Final Project"
+author: "DM"
+date: "June 16, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+This is my work for the Final Project of Course 8, Machine Learning. I have used the Random Forest method on the sensor data to produce the model. I explain my choices in mores detail below. 
+
+I invoked the caret and AppliedPredictiveModeling libraries and their associated dependies on other libraries in order to process the data.
+
+```{r Call libraries, echo=TRUE}
+  library(lattice)
+  library(ggplot2)
+  library(caret)
+  library(AppliedPredictiveModeling)
+```
+
+## Reading the training data
+
+The training data was read in from a csv file in the same folder as the R file. 
+
+I decided to remove the rows corresponding to what appeared to be data summaries, as they would likely bias the data. Only non-summary rows were kept.
+
+Next, a subset of the data columns was chosen for modeling. Only columns representing sensor data were kept, given that the purpose of the project was to build models on device output.
+I decided not to omit sensor data, e.g. belt data, even though it might not appear obviously relevant to arm exercises. Therefore the individual, the time of observation, and index were omitted. The classe variable represents the actual classification of the exercise, and was used for verifying the model. Additionally, only columns containing data were kept (excluding the summary rows).
+
+
+```{r Read in training data, echo=TRUE}
+  #Read in training data from csv file
+  training = read.csv("pml-training.csv")
+  
+  #Remove data summaries from the training set
+  training <- training[!(training$new_window=="yes"),]
+  
+   #Subset the training data to remove columsns such as name, time of measurement, 
+  #observation number that should not influence the model.
+
+
+  
+fulltraining <- subset(training,select=c(roll_belt,pitch_belt,yaw_belt,total_accel_belt,gyros_belt_x,gyros_belt_y,gyros_belt_z,accel_belt_x,accel_belt_y,accel_belt_z,magnet_belt_x,magnet_belt_y,magnet_belt_z,roll_arm,pitch_arm,yaw_arm,total_accel_arm,gyros_arm_x,gyros_arm_y,gyros_arm_z,accel_arm_x,accel_arm_y,accel_arm_z,magnet_arm_x,magnet_arm_y,magnet_arm_z,roll_dumbbell,pitch_dumbbell,yaw_dumbbell,total_accel_dumbbell,gyros_dumbbell_x,gyros_dumbbell_y,gyros_dumbbell_z,accel_dumbbell_x,accel_dumbbell_y,accel_dumbbell_z,magnet_dumbbell_x,magnet_dumbbell_y,magnet_dumbbell_z,roll_forearm,pitch_forearm,yaw_forearm,gyros_forearm_x,gyros_forearm_y,gyros_forearm_z,accel_forearm_x,accel_forearm_y,accel_forearm_z,magnet_forearm_x,magnet_forearm_y,magnet_forearm_z,classe))
+  
+
+```
+
+##Creating training and test sets from the data
+
+The training test set provided contains 19,622 rows of data. This large dataset can be split up into a training and test set. Having a test set is required in order to estimate the model accuracy. I devoted 70% of the dataset to producing the model. This left thousands of rows for measuring predictions.
+
+Note that we will also later read in data called "test", but this is to determine the quiz results, and is not meant to test the model. 
+
+```{r Create training and test sets,echo=TRUE}
+#We have a large dataset that contains data on the actual classe of the observation 
+  #so we can split it into training and test (verification) sets.
+  
+  inTrain <- createDataPartition(y=fulltraining$classe,p=0.7,list=FALSE)
+  training <- fulltraining[inTrain,]
+  traintesting <- fulltraining[-inTrain,]
+```
+##Fitting a model, plus cross validation
+
+I decided to use the random forest method with the train function. While the researchers who collected the data used a combination of techniques, they began with random forests, and given limitations of processing capacity and time I felt that this would be sufficient. I added cross validation to the train function using ten splits, which again seemed reasonable given the size of the training set. 
+```{r Fit a model,echo=TRUE }
+
+  #Fit the model, and use the Cross Validation feature with 10 splits 
+  modFit <- train(classe ~.,method="rf",data=training,trControl=trainControl(method="cv",number=10,verboseIter=FALSE))
+  testpredictions <- predict(modFit,traintesting)
+  
+
+```
+##Confusion Matrix to test accuracy
+
+I next created a Confusion Matrix to determine the accuracy of the model. The test data came the original file called test (30% of the original).
+
+The Confusion Matrix results indicated greater than 99% accuracy (99.1%), giving me confidence that I could use this for the quiz predictions. 
+```{r Create a confusion matrix,echo=TRUE}
+#Create a confusionMatrix to assess the accuracy of the model
+  print(confusionMatrix(testpredictions,traintesting$classe))
+
+```
+##Generating predictions for the quiz
+
+The next step was to read in the data that the quiz results would be calculated from, and to subset that data in the same manner that the model data was.
+
+```{r Read in and subset quiz data,echo=TRUE}
+  # Read in testing data for the quiz  
+  finaltesting = read.csv("pml-testing.csv")
+  # Subset the data to use only the factors in the model
+  
+  finalttesting <- subset(finaltesting,select=c(roll_belt,pitch_belt,yaw_belt,total_accel_belt,gyros_belt_x,gyros_belt_y,gyros_belt_z,accel_belt_x,accel_belt_y,accel_belt_z,magnet_belt_x,magnet_belt_y,magnet_belt_z,roll_arm,pitch_arm,yaw_arm,total_accel_arm,gyros_arm_x,gyros_arm_y,gyros_arm_z,accel_arm_x,accel_arm_y,accel_arm_z,magnet_arm_x,magnet_arm_y,magnet_arm_z,roll_dumbbell,pitch_dumbbell,yaw_dumbbell,total_accel_dumbbell,gyros_dumbbell_x,gyros_dumbbell_y,gyros_dumbbell_z,accel_dumbbell_x,accel_dumbbell_y,accel_dumbbell_z,magnet_dumbbell_x,magnet_dumbbell_y,magnet_dumbbell_z,roll_forearm,pitch_forearm,yaw_forearm,gyros_forearm_x,gyros_forearm_y,gyros_forearm_z,accel_forearm_x,accel_forearm_y,accel_forearm_z,magnet_forearm_x,magnet_forearm_y,magnet_forearm_z))
+
+```
+##Quiz predictions
+
+The results for the test predictions were then easily determined by predicting the result for each row of quiz testing data using the model fit generated ealier. 
+
+```{r Predict quiz results,echo=TRUE}
+```
+##Predict the quiz results
+
+Question 1:
+```{r Question 1,echo=TRUE}
+   print(predict(modFit,finaltesting[1,]))
+```
+Question 2:
+```{r Question 2,echo=TRUE}
+   print(predict(modFit,finaltesting[2,]))
+```
+Question 3:
+```{r}
+   print(predict(modFit,finaltesting[3,]))
+```
+Question 4:
+```{r}
+   print(predict(modFit,finaltesting[4,]))
+```
+Question 5:
+```{r}
+   print(predict(modFit,finaltesting[5,]))
+```
+Question 6:
+```{r}
+   print(predict(modFit,finaltesting[6,]))
+```
+Question 7:
+```{r}
+   print(predict(modFit,finaltesting[7,]))
+```
+Question 8:
+```{r}
+   print(predict(modFit,finaltesting[8,]))
+```
+Question 9:
+```{r}
+   print(predict(modFit,finaltesting[9,]))
+```
+Question 10:
+```{r}
+   print(predict(modFit,finaltesting[10,]))
+```
+Question 11:
+```{r}
+   print(predict(modFit,finaltesting[11,]))
+```
+Question 12:
+```{r}
+   print(predict(modFit,finaltesting[12,]))
+```
+Question 13:
+```{r}
+   print(predict(modFit,finaltesting[13,]))
+```
+Question 14:
+```{r}
+   print(predict(modFit,finaltesting[14,]))
+```
+Question 15:
+```{r}
+   print(predict(modFit,finaltesting[15,]))
+```
+Question 16:
+```{r}
+   print(predict(modFit,finaltesting[16,]))
+```
+Question 17:
+```{r}
+   print(predict(modFit,finaltesting[17,]))
+```
+Question 18:
+```{r}
+   print(predict(modFit,finaltesting[18,]))
+```
+Question 19:
+```{r}
+   print(predict(modFit,finaltesting[19,]))
+```
+Question 20:
+```{r}
+   print(predict(modFit,finaltesting[20,]))
+```
+##Conclusions
+
+This relatively simple approach based on all of the sensor data and only the random forest model showed that greater than 99% accuracy could be achieved. The results for the 20 cases in the test csv file were used in the project quiz and found to be 100% correct.
+   
+
+
+
+
+  
